@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="dashboardApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="css\dashboard.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+</head>
+<body ng-controller="DashboardController">
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <ul>
+            <li><a href="mr.html">Home</a></li>
+            <li><a href="dashboard.html" class="active">Dashboard</a></li>
+            <li><a href="categories.html">Categories</a></li>
+            <li><a href="recommendation.html">Recommendations</a></li>
+            
+            <li><a href="search.html">Search</a></li>
+            <li><a href="#" ng-click="logout()">Logout</a></li>
+        </ul>
+    </nav>
+    
+    <!-- User Dashboard -->
+    <div class="container" id="dashboard">
+        <h2>Welcome, {{ user.name }}!</h2>
+        
+        <div class="user-info">
+            <h3>User Info & Settings</h3>
+            <label>Name:</label>
+            <input type="text" ng-model="user.username">
+            <label>Email:</label>
+            <input type="email" ng-model="user.email">
+            
+        </div>
+        
+        <!-- Favorites Section with Scroll -->
+        <div class="favorites">
+            <h3>Favorites</h3>
+            <div class="scrollable-container">
+                <ul>
+                    <li ng-repeat="fav in favorites" class="favorite-item">
+                        <strong>{{ fav.title }}</strong> ({{ fav.genre }}, {{ fav.release_year }}) 
+                        - Rated: {{ fav.rating }} | Studio: {{ fav.studio }}
+                        <button ng-click="removeFavorite(fav)">Remove</button>
+                      </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- History Section with Scroll -->
+        <div class="history">
+            <h3>History</h3>
+            <div class="scrollable-container">
+                <ul>
+                    <li ng-repeat="hist in history">
+                        <strong>{{ hist.title }}</strong> - Watched on: {{ hist.watched_date | date:'mediumDate' }}
+                      </li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+    
+    <script>
+        var app = angular.module('dashboardApp', []);
+
+        app.controller('DashboardController', function($scope, $http, $window) {
+            // Retrieve user info from localStorage
+            $scope.user = JSON.parse(localStorage.getItem('user'));
+
+            if (!$scope.user) {
+                // Redirect to login if no user data is found
+                $window.location.href = 'login.html';
+            }
+
+            // Fetch user history
+            
+            if ($scope.user && $scope.user.id) {  // Ensure user object and ID exist
+                let userId = $scope.user.id;  // Extract ID correctly
+                $http.get(`http://localhost:4000/api/history/${userId}`)
+                .then(function (response) {
+                    console.log(" Received history:", response.data);
+                    $scope.history = response.data;
+                })
+                .catch(function (error) {
+                    console.error(" Error fetching history:", error);
+                });
+            } else {
+                console.error("No valid user ID found in localStorage");
+            }   
+
+            // Fetch user favorites
+            $http.get(`http://localhost:4000/api/favorites/${$scope.user.id}`).then(function(response) {
+                    $scope.favorites = response.data;
+            }).catch(function(error) {
+                console.error("Error fetching favorites:", error);
+            });
+
+            // Logout function
+            $scope.logout = function() {
+                localStorage.removeItem('user');
+                $window.location.href = 'login.html';
+                };
+            
+            // Remove favorite function
+            $scope.removeFavorite = function(fav) {
+                $http.post('http://localhost:4000/api/favorites/delete', {
+                userId: $scope.user.id,
+                animeId: fav.anime_id
+            })
+            .then(function(response) {
+                console.log("Removed from favorites:", response.data);
+                // Remove the item from the favorites array
+                const index = $scope.favorites.findIndex(item => item.anime_id === fav.anime_id);
+            if (index !== -1) {
+                $scope.favorites.splice(index, 1);
+                }
+            })
+            .catch(function(error) {
+                console.error("Error removing favorite:", error);
+            });
+        };
+            });
+    </script>
+
+    <style>
+        
+        .scrollable-container {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+
+</body>
+</html>

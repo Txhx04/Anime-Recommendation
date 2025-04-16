@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="recommendationApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommendations</title>
+    <link rel="stylesheet" href="css\recommendation.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+</head>
+<body ng-controller="RecommendationController">
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <ul>
+            <li><a href="mr.html">Home</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="recommendation.html" class="active">Recommendations</a></li>
+            <li><a href="search.html">Search</a></li>
+            <li><a href="categories.html">Categories</a></li>
+            <li ng-if="isLoggedIn" ng-click="logout()"><a href="login.html">Logout</a></li>
+            <li ng-if="!isLoggedIn" ><a href="login.html">Login</a></li>
+        </ul>
+    </nav>
+    
+    <!-- Recommendations Page -->
+    <div class="container">
+        <h2>Personalized Recommendations</h2>
+        
+        <div class="filters">
+            <label>Sort by:</label>
+            <select ng-model="sortBy">
+                <option value="title">Name</option>
+                <option value="rating">Rating</option>
+            </select>
+
+            <label>Filter by Genre:</label>
+            <select ng-model="selectedGenre">
+                <option value="">All</option>
+                <option ng-repeat="genre in genres" value="{{ genre }}">{{ genre }}</option>
+            </select>
+        </div>
+
+        <div class="recommendations-list">
+            <div ng-repeat="rec in recommendations | filter:{genre: selectedGenre} | orderBy:sortBy" class="recommendation">
+                <div class="recommendation-container">
+                    <div class="recommendation-image">
+                        <img ng-src="{{rec.imageUrl}}" alt="{{rec.title}}" class="anime-thumbnail">
+                    </div>
+                    <div class="recommendation-info">
+                        <h3>{{ rec.title }}</h3>
+                        <p>Genre: {{ rec.genre }}</p>
+                        <p>Rating: {{ rec.rating }}</p>
+                        <p>{{ rec.description }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        var app = angular.module('recommendationApp', []);
+        
+        app.controller('RecommendationController', function ($scope, $http, $window) {
+            $scope.user = JSON.parse(localStorage.getItem('user'));
+            const userId = $scope.user ? $scope.user.id : null;
+
+            $scope.logout = function() {
+                localStorage.removeItem('user');
+                $window.location.href = 'login.html';
+            };
+
+            $scope.isLoggedIn = false;
+            if (JSON.parse(localStorage.getItem('user'))){
+                $scope.isLoggedIn = true;
+            }
+
+            // Load anime image from Gemini - same function as search.html
+            $scope.loadAnimeImage = function(anime) {
+                $http.get(`http://localhost:4000/api/gemini/image/${anime.anime_id}`)
+                    .then(function(response) {
+                        if (response.data.success) {
+                            anime.imageUrl = response.data.imageUrl;
+                        } else {
+                            // Use placeholder if image load fails
+                            anime.imageUrl = 'placeholder.jpg';
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error("Error loading anime image:", error);
+                        // Use placeholder on error
+                        anime.imageUrl = 'placeholder.jpg';
+                    });
+            };
+
+            // Fetch recommendations
+            if (userId) {
+                $http.get(`http://localhost:4000/api/recommendations/${userId}`)
+                    .then(response => {
+                        $scope.recommendations = response.data;
+                        
+                        // Load images for each recommendation
+                        $scope.recommendations.forEach(function(anime) {
+                            $scope.loadAnimeImage(anime);
+                        });
+                    })
+                    .catch(error => {
+                        console.error("Error fetching recommendations:", error);
+                    });
+            } else {
+                console.warn("User ID not available, cannot fetch recommendations");
+            }
+
+            // Fetch unique genres from the database
+            $http.get("http://localhost:4000/api/genres")
+                .then(response => {
+                    $scope.genres = response.data;
+                })
+                .catch(error => {
+                    console.error("Error fetching genres:", error);
+                });
+        });
+    </script>
+
+    <style>
+        /* Additional styles for the recommendation cards with images */
+        .recommendation-container {
+            display: flex;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #231f1f;
+        }
+        
+        .recommendation-image {
+            width: 150px;
+            min-width: 150px;
+            height: 200px;
+            overflow: hidden;
+        }
+        
+        .recommendation-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .recommendation-info {
+            padding: 15px;
+            flex-grow: 1;
+        }
+        
+        .anime-thumbnail {
+            transition: transform 0.3s ease;
+        }
+        
+        .anime-thumbnail:hover {
+            transform: scale(1.05);
+        }
+    </style>
+
+</body>
+</html>

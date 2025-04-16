@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="categoriesApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories</title>
+    <link rel="stylesheet" href="css\categories.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+</head>
+<body ng-controller="CategoriesController">
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <ul>
+            <li><a href="mr.html">Home</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="categories.html" class="active">Categories</a></li>
+            <li><a href="recommendation.html">Recommendations</a></li>
+            
+            <li><a href="search.html">Search</a></li>
+            <li ng-if="isLoggedIn" ng-click="logout()"><a href="login.html">Logout</a></li>
+            <li ng-if="!isLoggedIn" ><a href="login.html">Login</a></li>
+        </ul>
+    </nav>
+
+    <!-- Categories Page -->
+    <div class="container">
+        <h2>Anime Categories</h2>
+
+        <!-- Genre Selection -->
+        <label>Choose Genre:</label>
+        <select ng-model="selectedGenre" ng-options="genre for genre in categories" ng-change="loadAnimeByGenre()">
+            <option value="">Select a Genre</option>
+        </select>
+
+        <!-- Anime List -->
+        <div class="anime-list">
+            <h3>Anime List</h3>
+            <div ng-repeat="anime in animeList" class="anime-item">
+                <div class="anime-container">
+                    <div class="anime-image">
+                        <img ng-src="{{anime.imageUrl}}" alt="{{anime.title}}" class="anime-thumbnail">
+                    </div>
+                    <div class="anime-info">
+                        <h4>{{ anime.title }}</h4>
+                        <p>Release Year: {{ anime.release_year }}</p>
+                        <p>Rating: {{ anime.rating }}</p>
+                        <div class="anime-actions" ng-if="isLoggedIn">
+                            <button class="btn-favorite" ng-click="addToFavorites(anime)" ng-disabled="anime.inFavorites">
+                                {{ anime.inFavorites ? 'In Favorites' : 'Add to Favorites' }}
+                            </button>
+                            <button class="btn-watched" ng-click="markAsWatched(anime)" ng-disabled="anime.isWatched">
+                                {{ anime.isWatched ? 'Watched' : 'Mark as Watched' }}
+                            </button>
+                        </div>
+                        <div ng-if="!isLoggedIn" class="login-prompt">
+                            <p>Please <a href="login.html">login</a> to add favorites or mark as watched</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var app = angular.module('categoriesApp', []);
+
+        app.controller('CategoriesController', function($scope, $http, $window) {
+            $scope.categories = [];
+            $scope.selectedGenre = null;
+            $scope.animeList = [];
+            $scope.user = JSON.parse(localStorage.getItem('user'));
+
+            $scope.logout = function() {
+                localStorage.removeItem('user');
+                $window.location.href = 'login.html';
+            };
+
+            $scope.isLoggedIn = false;
+            if ($scope.user) {
+                $scope.isLoggedIn = true;
+            }
+            
+            // Fetch genres from API
+            $http.get('http://localhost:4000/api/genres').then(response => {
+                $scope.categories = response.data;
+            });
+
+            // Load anime image from Gemini API
+            $scope.loadAnimeImage = function(anime) {
+                $http.get(`http://localhost:4000/api/gemini/image/${anime.anime_id}`)
+                    .then(function(response) {
+                        if (response.data.success) {
+                            anime.imageUrl = response.data.imageUrl;
+                        } else {
+                            anime.imageUrl = 'placeholder.jpg';
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error("Error loading anime image:", error);
+                        anime.imageUrl = 'placeholder.jpg';
+                    });
+            };
+
+            // Check if anime is in user's favorites
+            $scope.checkFavoriteStatus = function(animeId) {
+                return $http.get(`http://localhost:4000/api/check-favorite/${$scope.user.id}/${animeId}`)
+                    .then(response => {
+                        return response.data.isFavorite;
+                    })
+                    .catch(error => {
+                        console.error("Error checking favorite status:", error);
+                        return false;
+                    });
+            };
+
+            // Check if anime is in user's watch history
+            $scope.checkWatchedStatus = function(animeId) {
+                return $http.get(`http://localhost:4000/api/check-watched/${$scope.user.id}/${animeId}`)
+                    .then(response => {
+                        return response.data.isWatched;
+                    })
+                    .catch(error => {
+                        console.error("Error checking watched status:", error);
+                        return false;
+                    });
+            };
+
+            // Fetch anime based on selected genre
+            $scope.loadAnimeByGenre = function() {
+                if ($scope.selectedGenre) {
+                    $http.get(`http://localhost:4000/api/anime?genre=${$scope.selectedGenre}`).then(response => {
+                        $scope.animeList = response.data;
+                        
+                        // Load images and check status for each anime
+                        $scope.animeList.forEach(anime => {
+                            $scope.loadAnimeImage(anime);
+                            
+                            if ($scope.isLoggedIn) {
+                                // Check if anime is in favorites
+                                $scope.checkFavoriteStatus(anime.anime_id).then(isFavorite => {
+                                    anime.inFavorites = isFavorite;
+                                });
+                                
+                                // Check if anime is watched
+                                $scope.checkWatchedStatus(anime.anime_id).then(isWatched => {
+                                    anime.isWatched = isWatched;
+                                });
+                            }
+                        });
+                    });
+                }
+            };
+
+            // Add to favorites
+            $scope.addToFavorites = function(anime) {
+                if (!$scope.isLoggedIn) {
+                    alert("Please login to add favorites");
+                    return;
+                }
+
+                $http.post('http://localhost:4000/api/favorites/add', {
+                    userId: $scope.user.id,
+                    animeId: anime.anime_id
+                }).then(response => {
+                    anime.inFavorites = true;
+                    alert("Added to favorites!");
+                }).catch(error => {
+                    console.error("Error adding to favorites:", error);
+                    alert("Failed to add to favorites");
+                });
+            };
+
+            // Mark as watched
+            $scope.markAsWatched = function(anime) {
+                if (!$scope.isLoggedIn) {
+                    alert("Please login to mark as watched");
+                    return;
+                }
+
+                $http.post('http://localhost:4000/api/watched/add', {
+                    userId: $scope.user.id,
+                    animeId: anime.anime_id
+                }).then(response => {
+                    anime.isWatched = true;
+                    alert("Marked as watched!");
+                }).catch(error => {
+                    console.error("Error marking as watched:", error);
+                    alert("Failed to mark as watched");
+                });
+            };
+        });
+    </script>
+
+    <style>
+        /* Additional styles for the anime cards with images */
+        .anime-container {
+            display: flex;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #242121;
+        }
+        
+        .anime-image {
+            width: 120px;
+            min-width: 120px;
+            height: 160px;
+            overflow: hidden;
+        }
+        
+        .anime-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .anime-info {
+            padding: 15px;
+            flex-grow: 1;
+        }
+        
+        .anime-thumbnail {
+            transition: transform 0.3s ease;
+        }
+        
+        .anime-thumbnail:hover {
+            transform: scale(1.05);
+        }
+        
+        .anime-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-favorite, .btn-watched {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+        }
+        
+        .btn-favorite {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-watched {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-favorite:hover:not([disabled]) {
+            background-color: #ffdb58;
+        }
+        
+        .btn-watched:hover:not([disabled]) {
+            background-color: #218838;
+        }
+        
+        button[disabled] {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .login-prompt {
+            margin-top: 10px;
+            font-style: italic;
+            color: #6c757d;
+        }
+    </style>
+</body>
+</html>

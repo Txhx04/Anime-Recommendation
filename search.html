@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="searchApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+    <link rel="stylesheet" href="css\search.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+</head>
+<body ng-controller="SearchController">
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <ul>
+            <li><a href="mr.html">Home</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="categories.html">Categories</a></li>
+            <li><a href="recommendation.html">Recommendations</a></li>
+            <li><a href="search.html" class="active">Search</a></li>
+            <li ng-if="isLoggedIn" ng-click="logout()"><a href="login.html">Logout</a></li>
+            <li ng-if="!isLoggedIn" ><a href="login.html">Login</a></li>
+        </ul>
+    </nav>
+    
+    <!-- Search Page -->
+    <div class="container">
+        <h2>Search Results</h2>
+        
+        <input type="text" ng-model="searchQuery" placeholder="Search..." ng-change="searchMedia()" class="search-bar">
+        
+        <div class="filters">
+            <label>Sort By:</label>
+            <select ng-model="sortBy" ng-change="searchMedia()">
+                <option value="name">Name</option>
+                <option value="rating">Rating</option>
+                <option value="popularity">Popularity</option>
+            </select>
+        </div>
+        
+        <div class="search-results">
+            <ul>
+                <li ng-repeat="item in filteredResults" class="search-item">
+                    <div class="search-item-container">
+                        <div class="search-item-image">
+                            <img ng-src="{{item.imageUrl }}" alt="{{item.title}}" 
+                                 ng-init="loadAnimeImage(item)" class="anime-thumbnail">
+                        </div>
+                        <div class="search-item-info">
+                            <a href="media-details.html?id={{item.anime_id}}" class="search-link">{{ item.title }}</a>
+                            <p>{{ item.genre }} (Rating: {{ item.rating }})</p>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        var app = angular.module('searchApp', []);
+        
+        app.controller('SearchController', function($scope, $http, $window) {
+    $scope.searchQuery = "";
+    $scope.sortBy = "name";
+    $scope.filteredResults = [];
+
+    // Logout function
+    $scope.logout = function() {
+        localStorage.removeItem('user');
+        $window.location.href = 'login.html';
+    };
+
+    // Check if the user is logged in
+    $scope.isLoggedIn = false;
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+        $scope.isLoggedIn = true;
+    }
+
+    // Search media function
+    $scope.searchMedia = function() {
+        $http.get('http://localhost:4000/api/search', {
+            params: { query: $scope.searchQuery, sortBy: $scope.sortBy }
+        }).then(function(response) {
+            $scope.filteredResults = response.data;
+            // Initialize images to placeholder
+            $scope.filteredResults.forEach(item => {
+                item.imageUrl = 'placeholder.jpg'; 
+            });
+        }).catch(function(error) {
+            console.error("Error fetching search results:", error);
+            alert("An error occurred while fetching search results. Please try again later.");
+        });
+    };
+    
+    // Load anime image from Gemini
+    $scope.loadAnimeImage = function(anime) {
+    $http.get(`http://localhost:4000/api/gemini/image/${anime.anime_id}`)
+        .then(function(response) {
+            if (response.data.success) {
+                anime.imageUrl = response.data.imageUrl;
+            }
+        })
+        .catch(function(error) {
+            console.error("Error loading anime image:", error);
+            // Do nothing on failure – no placeholder shown
+        });
+};
+
+    
+    // Initialize with URL parameters if any
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('query')) {
+        $scope.searchQuery = urlParams.get('query');
+        $scope.searchMedia();
+    }
+});
+    </script>
+</body>
+</html>

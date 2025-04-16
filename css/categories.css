@@ -1,0 +1,325 @@
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap');
+
+/* Base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  background: radial-gradient(circle at top, #0f0f0f, #000000);
+  color: #fff;
+  min-height: 100vh;
+  animation: fadeIn 1s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+}
+
+/* Typography */
+h1, h2, h3, h4 {
+  font-family: 'Orbitron', sans-serif;
+}
+
+h2 {
+  font-size: 2em;
+  color: #ff6ec7;
+  text-align: center;
+  margin: 2rem 0 1.5rem;
+  text-shadow: 0 0 8px #ff6ec7;
+  animation: glowPulse 2s infinite alternate;
+}
+
+@keyframes glowPulse {
+  from { text-shadow: 0 0 5px #ff6ec7, 0 0 15px #ff0080; }
+  to { text-shadow: 0 0 10px #ff6ec7, 0 0 25px #ff0080, 0 0 35px #ff0080; }
+}
+
+h3 {
+  font-size: 1.6em;
+  color: #00eeff;
+  margin: 1.5rem 0 1rem;
+  text-shadow: 0 0 8px rgba(0, 238, 255, 0.5);
+  position: relative;
+  padding-left: 1rem;
+}
+
+h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: linear-gradient(to bottom, #00eeff, transparent);
+}
+
+h4 {
+  font-size: 1.3em;
+  color: #ff6ec7;
+  margin-bottom: 0.5em;
+}
+
+p {
+  font-family: 'Roboto', sans-serif;
+  line-height: 1.6;
+  margin-bottom: 0.5em;
+  font-size: 1rem;
+  color: #e0e0e0;
+}
+
+/* Navigation Bar */
+.navbar {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 20px rgba(255, 110, 199, 0.2);
+}
+
+.navbar ul {
+  display: flex;
+  list-style-type: none;
+  justify-content: center;
+  padding: 0.8rem 1rem;
+}
+
+.navbar li {
+  margin: 0 1rem;
+  position: relative;
+}
+
+.navbar a {
+  color: #e0e0e0;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: color 0.3s;
+  display: block;
+  position: relative;
+}
+
+.navbar a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #ff6ec7;
+  transition: width 0.3s ease-out;
+}
+
+.navbar a:hover {
+  color: #ff6ec7;
+}
+
+.navbar a:hover::after {
+  width: 100%;
+}
+
+.navbar a.active {
+  color: #ff6ec7;
+}
+
+.navbar a.active::after {
+  width: 100%;
+  box-shadow: 0 0 10px #ff6ec7;
+}
+
+/* Genre Selection */
+.container > label {
+  display: block;
+  color: #00eeff;
+  font-weight: 500;
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 5px rgba(0, 238, 255, 0.5);
+  animation: fadeSlideUp 0.8s ease-out;
+}
+
+@keyframes fadeSlideUp {
+  from { 
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+select {
+  background: rgba(20, 20, 30, 0.7);
+  border: 1px solid rgba(255, 110, 199, 0.3);
+  border-radius: 50px;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  font-family: 'Roboto', sans-serif;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 2rem;
+  cursor: pointer;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  outline: none;
+  animation: fadeSlideUp 0.8s ease-out;
+  box-shadow: 0 0 15px rgba(255, 110, 199, 0.1);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ff6ec7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.2em;
+}
+
+select:focus {
+  border-color: #ff6ec7;
+  box-shadow: 0 0 15px rgba(255, 110, 199, 0.3);
+}
+
+select:hover {
+  border-color: #ff6ec7;
+}
+
+select option {
+  background-color: #1a1a2e;
+  color: white;
+  padding: 0.5rem;
+}
+
+/* Anime List Section */
+.anime-list {
+  background: rgba(20, 20, 30, 0.5);
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  animation: fadeIn 1s ease-out 0.3s backwards;
+  box-shadow: 0 0 25px rgba(0, 238, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.anime-list::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #00eeff, transparent, #ff6ec7, transparent);
+  z-index: -1;
+  border-radius: 16px;
+  opacity: 0.5;
+  background-size: 300% 300%;
+  animation: borderFlow 8s linear infinite;
+}
+
+@keyframes borderFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Anime Items */
+.anime-item {
+  background: rgba(20, 20, 30, 0.7);
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s, box-shadow 0.3s;
+  position: relative;
+  overflow: hidden;
+  animation: fadeSlideUp 0.5s ease-out;
+}
+
+.anime-item::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, transparent, #ff6ec7, transparent);
+  z-index: -1;
+  transform: scale(0.98);
+  border-radius: 13px;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.anime-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(255, 110, 199, 0.2);
+}
+
+.anime-item:hover::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.anime-item p {
+  color: #bbb;
+  font-size: 0.95rem;
+}
+
+.anime-item p:last-child {
+  color: #00eeff;
+  font-weight: 500;
+}
+
+/* Empty State */
+.anime-list:empty::after {
+  content: 'Select a genre to view anime';
+  display: block;
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-style: italic;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .navbar ul {
+    flex-wrap: wrap;
+  }
+  
+  .navbar li {
+    margin: 0.3rem;
+  }
+  
+  .container {
+    padding: 1rem;
+  }
+  
+  h2 {
+    font-size: 1.8em;
+  }
+  
+  select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  h3 {
+    font-size: 1.4em;
+  }
+  
+  .anime-item {
+    padding: 1rem;
+  }
+}

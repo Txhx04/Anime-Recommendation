@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="homeApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Multimedia Recommendation</title>
+    <link rel="stylesheet" href="css\landing.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+</head>
+<body ng-controller="HomeController">
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <ul>
+            <li><a href="mr.html" class="active">Home</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="categories.html">Categories</a></li>
+            <li><a href="recommendation.html">Recommendations</a></li>
+            <li><a href="search.html">Search</a></li>
+            <li ng-if="isLoggedIn" ng-click="logout()"><a href="login.html">Logout</a></li>
+            <li ng-if="!isLoggedIn" ><a href="login.html">Login</a></li>
+        </ul>
+    </nav>
+
+    <!-- Home Page Content -->
+    <div class="container">
+        <h1>Welcome to Anime Recommendations</h1>
+        <p>Discover new anime and more based on your interests.</p>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <input type="text" ng-model="searchQuery" placeholder="Search for media...">
+            <button ng-click="search()">Search</button>
+        </div>
+
+
+        <!-- User Login Check -->
+        <div ng-if="!isLoggedIn">
+            <p>You are not logged in. Please log in to access personalized recommendations.</p>
+            <button ng-click="redirectToLogin()">Login</button>
+        </div>
+
+        <h2>Featured Content</h2>
+        <div class="featured-content">
+            <div class="card" ng-repeat="item in featuredContent">
+                <img ng-src="{{item.imageUrl}}" alt="{{item.title}}" class="anime-thumbnail">
+                <h3>{{item.title}}</h3>
+                <p>{{item.genre}}</p>
+                
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var app = angular.module('homeApp', []);
+        app.controller('HomeController', function($scope, $http, $window) {
+            // Check login status
+            $scope.isLoggedIn = false;
+            if (JSON.parse(localStorage.getItem('user'))){
+                $scope.isLoggedIn = true;
+            }
+
+            // Fetch popular anime for featured content
+            $http.get('http://localhost:4000/api/anime/popular')
+                .then(function(response) {
+                    $scope.featuredContent = response.data.slice(0, 3); // Show only top 3
+                    
+                    // Load images for each anime
+                    $scope.featuredContent.forEach(function(anime) {
+                        $scope.loadAnimeImage(anime);
+                    });
+                })
+                .catch(function(error) {
+                    console.error("Error fetching popular anime:", error);
+                    // Fallback data in case of error
+                    $scope.featuredContent = [
+                        { anime_id: 1, title: "Attack on Titan", genre: "Action", imageUrl: "placeholder.jpg" },
+                        { anime_id: 2, title: "Berserk", genre: "Fantasy", imageUrl: "placeholder.jpg" },
+                        { anime_id: 3, title: "Your Name", genre: "Romance", imageUrl: "placeholder.jpg" }
+                    ];
+                });
+                
+           
+            // Load anime images using the Gemini API (same as in search.html)
+            $scope.loadAnimeImage = function(anime) {
+                $http.get(`http://localhost:4000/api/gemini/image/${anime.anime_id}`)
+                    .then(function(response) {
+                        if (response.data.success) {
+                            anime.imageUrl = response.data.imageUrl;
+                        } else {
+                            anime.imageUrl = 'placeholder.jpg';
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error("Error loading anime image:", error);
+                        anime.imageUrl = 'placeholder.jpg';
+                    });
+            };
+            
+            $scope.logout = function() {
+                localStorage.removeItem('user');
+                $window.location.href = 'login.html';
+            };
+            
+            $scope.redirectToLogin = function() {
+                window.location.href = 'login.html';
+            };
+
+            $scope.search = function() {
+                window.location.href = 'search.html?query=' + encodeURIComponent($scope.searchQuery);
+            };
+        });
+    </script>
+</body>
+</html>

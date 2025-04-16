@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="mediaDetailsApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Details</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+</head>
+<body ng-controller="MediaDetailsController">
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <ul>
+            <li><a href="mr.html">Home</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="categories.html">Categories</a></li>
+            <li><a href="recommendation.html">Recommendations</a></li>
+            <li><a href="media.html" class="active">Media Details</a></li>
+            <li><a href="search.html">Search</a></li>
+            <li><a href="login.html">Login</a></li>
+        </ul>
+    </nav>
+    
+    <!-- Media Details Page -->
+    <div class="container">
+        <h2>{{ media.title }}</h2>
+        <img ng-src="{{ media.cover }}" alt="Cover Image" class="cover-image">
+        <p><strong>Synopsis:</strong> {{ media.synopsis }}</p>
+        <p><strong>Rating:</strong> {{ media.rating }}</p>
+        
+        <h3>Reviews</h3>
+        <ul class="review-list">
+            <li ng-repeat="review in media.reviews" class="review-item">{{ review }}</li>
+        </ul>
+        
+        <h3>Similar Media</h3>
+        <ul class="similar-list">
+            <li ng-repeat="similar in media.similar" class="similar-item">
+                <a href="media-details.html?id={{ similar.id }}">{{ similar.title }}</a>
+            </li>
+        </ul>
+        
+        <p><a ng-href="{{ media.officialSource }}" target="_blank" class="btn">Official Source</a></p>
+    </div>
+    
+    <script>
+        var app = angular.module('mediaDetailsApp', []);
+        
+        app.controller('MediaDetailsController', function($scope) {
+            var mediaData = {
+                id: 1,
+                title: "Attack on Titan",
+                cover: "aot_cover.jpg",
+                synopsis: "In a world where humanity is on the brink of extinction due to Titans...",
+                rating: 9.0,
+                reviews: ["Amazing story!", "Best anime ever!", "A masterpiece!"],
+                similar: [
+                    { id: 2, title: "Berserk" },
+                    { id: 3, title: "Vinland Saga" }
+                ],
+                officialSource: "https://www.crunchyroll.com/attack-on-titan"
+            };
+            
+            $scope.media = mediaData;
+        });
+    </script>
+</body>
+</html>
